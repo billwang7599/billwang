@@ -1,6 +1,6 @@
 return {
   'nvim-telescope/telescope.nvim',
-  branch = '0.1.x',
+  branch = 'master',
   dependencies = { 
     'nvim-lua/plenary.nvim',
     { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' }
@@ -38,7 +38,17 @@ return {
         find_files = {
           -- Configuration for 'find_files'
           -- Uses 'fd' to find everything (hidden/ignored) but excludes .git
-          find_command = { "/opt/homebrew/bin/fd", "--type", "f", "--hidden", "--no-ignore", "--exclude", ".git" }
+          find_command = { "/opt/homebrew/bin/fd", "--type", "f", "--hidden", "--no-ignore", "--exclude", ".git" },
+          cwd_only = true,
+        },
+        live_grep = {
+          cwd_only = true,
+        },
+        grep_string = {
+          cwd_only = true,
+        },
+        oldfiles = {
+          cwd_only = true,
         },
       },
     })
