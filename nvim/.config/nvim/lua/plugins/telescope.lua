@@ -3,7 +3,6 @@ return {
   branch = '0.1.x',
   dependencies = { 
     'nvim-lua/plenary.nvim',
-    -- Highly recommended: FZF native for better performance
     { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' }
   },
   config = function()
@@ -12,13 +11,34 @@ return {
 
     telescope.setup({
       defaults = {
-        path_display = { "truncate " },
+        path_display = { "truncate" },
+        -- Configuration for 'live_grep' and 'grep_string'
+        -- This tells ripgrep to show hidden and ignored files, but skip .git
+        vimgrep_arguments = {
+          "rg",
+          "--color=never",
+          "--no-heading",
+          "--with-filename",
+          "--line-number",
+          "--column",
+          "--smart-case",
+          "--hidden",
+          "--no-ignore",
+          "--glob", "!.git/*",
+        },
         mappings = {
           i = {
-            ["<C-k>"] = actions.move_selection_previous, -- move to prev result
-            ["<C-j>"] = actions.move_selection_next,     -- move to next result
+            ["<C-k>"] = actions.move_selection_previous,
+            ["<C-j>"] = actions.move_selection_next,
             ["<C-q>"] = actions.send_selected_to_qflist + actions.open_qflist,
           },
+        },
+      },
+      pickers = {
+        find_files = {
+          -- Configuration for 'find_files'
+          -- Uses 'fd' to find everything (hidden/ignored) but excludes .git
+          find_command = { "/opt/homebrew/bin/fd", "--type", "f", "--hidden", "--no-ignore", "--exclude", ".git" }
         },
       },
     })
@@ -28,12 +48,16 @@ return {
 
     -- Keymaps
     local builtin = require('telescope.builtin')
-    local keymap = vim.keymap -- for conciseness
+    local keymap = vim.keymap
 
-    keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Fuzzy find files in cwd' })
+    -- Standard find files (now uses the custom fd command from pickers)
+    keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Find files (inc. hidden/ignored, excl. .git)' })
     keymap.set('n', '<leader>fr', builtin.oldfiles, { desc = 'Fuzzy find recent files' })
-    keymap.set('n', '<leader>fs', builtin.live_grep, { desc = 'Find string in cwd' })
+    
+    -- Text search (now uses the custom rg arguments from defaults)
+    keymap.set('n', '<leader>fs', builtin.live_grep, { desc = 'Find string (inc. hidden/ignored, excl. .git)' })
     keymap.set('n', '<leader>fc', builtin.grep_string, { desc = 'Find string under cursor' })
+    
     keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'List open buffers' })
     keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'List help tags' })
   end
