@@ -7,8 +7,10 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 stow tmux
 
 # nvim
-stow nvim
+brew install nvim
 # run some command to ensure all dependancies for neovim packages are installed
+brew install fd rg
+stow nvim
 
 
 
