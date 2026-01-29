@@ -41,3 +41,4 @@ opt.splitright = true
 opt.splitbelow = true
 opt.clipboard = "unnamedplus"
 opt.autoread = true
+
