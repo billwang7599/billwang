@@ -1,6 +1,7 @@
 # good packages (MACOS)
 # install brew here 
 brew install stow 
+brew install lazygit
 
 # tmux
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
