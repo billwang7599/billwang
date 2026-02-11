@@ -42,3 +42,16 @@ opt.splitbelow = true
 opt.clipboard = "unnamedplus"
 opt.autoread = true
 
+-- Copy file paths
+vim.keymap.set("n", "cd", function()
+  local path = vim.fn.expand("%:p:h")
+  vim.fn.setreg("+", path)
+  print("Copied directory: " .. path)
+end, { noremap = true, silent = true, desc = "Copy file directory path" })
+
+vim.keymap.set("n", "cp", function()
+  local path = vim.fn.expand("%:p")
+  vim.fn.setreg("+", path)
+  print("Copied filepath: " .. path)
+end, { noremap = true, silent = true, desc = "Copy full file path" })
+
