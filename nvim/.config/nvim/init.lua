@@ -33,6 +33,7 @@ opt.autoindent = true
 opt.termguicolors = true
 opt.background = "dark"
 opt.cursorline = true
+opt.fillchars = { eob = " " }
 
 -- Behavior
 opt.ignorecase = true
