@@ -53,22 +53,6 @@ return {
       },
     })
 
-    -- Enable fzf native if installed
     telescope.load_extension('fzf')
-
-    -- Keymaps
-    local builtin = require('telescope.builtin')
-    local keymap = vim.keymap
-
-    -- Standard find files (now uses the custom fd command from pickers)
-    keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Find files (inc. hidden/ignored, excl. .git)' })
-    keymap.set('n', '<leader>fr', builtin.oldfiles, { desc = 'Fuzzy find recent files' })
-    
-    -- Text search (now uses the custom rg arguments from defaults)
-    keymap.set('n', '<leader>fs', builtin.live_grep, { desc = 'Find string (inc. hidden/ignored, excl. .git)' })
-    keymap.set('n', '<leader>fc', builtin.grep_string, { desc = 'Find string under cursor' })
-    
-    keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'List open buffers' })
-    keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'List help tags' })
   end
 }

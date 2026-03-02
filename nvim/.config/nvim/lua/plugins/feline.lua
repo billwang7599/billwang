@@ -76,6 +76,26 @@ return {
       },
     })
 
+    -- MIDDLE SECTION
+    table.insert(components.active[2], {
+      provider = function()
+        local ok, hydra = pcall(require, "hydra.statusline")
+        if ok and hydra.is_active() then
+          return " " .. hydra.get_name() .. " "
+        end
+        return ""
+      end,
+      hl = {
+        fg = colors.bg,
+        bg = colors.purple,
+        style = "bold",
+      },
+      enabled = function()
+        local ok, hydra = pcall(require, "hydra.statusline")
+        return ok and hydra.is_active()
+      end,
+    })
+
     -- RIGHT SECTION
     -- Git diff added
     table.insert(components.active[3], {

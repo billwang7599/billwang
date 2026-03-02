@@ -1,0 +1,290 @@
+#!/bin/bash
+
+# Git Worktree Helper
+# Creates or removes worktrees with a structured directory name and branch
+
+set -e
+
+usage() {
+    echo "Usage:"
+    echo "  gw add -n <name> [-t <base-branch>] <target-dir>"
+    echo "  gw rm [-f] <target-dir>"
+    echo "  gw mv <old-dir> <new-dir>"
+    echo "  gw co <branch> <target-dir>"
+    echo "  gw rmall [-f] [-s | <pattern>]"
+    echo ""
+    echo "Add options:"
+    echo "  -n <name>        Name for the worktree/branch (spaces become dashes)"
+    echo "  -s               Use tmux session name as worktree/branch name"
+    echo "  -t <base-branch> Branch to create from (default: main)"
+    echo "  <target-dir>     Directory to create worktree in (e.g., ~/Documents or .)"
+    echo ""
+    echo "Note: -n and -s are mutually exclusive"
+    echo ""
+    echo "Examples:"
+    echo "  gw add -n my-feature .                # Creates ./myrepo-my-feature from main"
+    echo "  gw add -n \"my feature\" .              # Creates ./myrepo-my-feature from main"
+    echo "  gw add -n bugfix -t develop .         # Creates ./myrepo-bugfix from develop"
+    echo "  gw add -s .                           # Creates ./myrepo-<tmux-session> from main"
+    echo "  gw add -n hotfix ~/Documents          # Creates ~/Documents/myrepo-hotfix from main"
+    echo "  gw rm ./myrepo-hotfix             # Removes the worktree"
+    echo "  gw rm -f ./myrepo-hotfix          # Force remove (ignores changes)"
+    echo "  gw mv ./myrepo-old ./myrepo-new  # Renames/moves the worktree"
+    echo "  gw co feature-branch .           # Checkout existing branch to ./myrepo-feature-branch"
+    echo "  gw rmall snet-69                 # Remove all worktrees matching 'snet-69' in current dir"
+    echo "  gw rmall -f snet-69              # Force remove all matching worktrees"
+    echo "  gw rmall -s                      # Remove all worktrees matching tmux session name"
+    exit 1
+}
+
+if [ -z "$1" ]; then
+    usage
+fi
+
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    add)
+        NAME=""
+        USE_TMUX_SESSION=false
+        BASE_BRANCH="main"
+        TARGET_DIR=""
+
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                -n)
+                    NAME=$(echo "$2" | tr ' ' '-')
+                    shift 2
+                    ;;
+                -s)
+                    USE_TMUX_SESSION=true
+                    shift
+                    ;;
+                -t)
+                    BASE_BRANCH="$2"
+                    shift 2
+                    ;;
+                *)
+                    TARGET_DIR="$1"
+                    shift
+                    ;;
+            esac
+        done
+
+        # Handle -s flag
+        if [ "$USE_TMUX_SESSION" = true ]; then
+            if [ -n "$NAME" ]; then
+                echo "Error: -n and -s are mutually exclusive"
+                exit 1
+            fi
+            if [ -z "$TMUX" ]; then
+                echo "Error: -s requires running inside tmux"
+                exit 1
+            fi
+            NAME=$(tmux display-message -p '#S' | tr ' ' '-')
+        fi
+
+        if [ -z "$NAME" ]; then
+            echo "Error: Name required (-n or -s)"
+            usage
+        fi
+
+        if [ -z "$TARGET_DIR" ]; then
+            echo "Error: Target directory required"
+            usage
+        fi
+
+        # Get current repo name from git root
+        REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+        if [ -z "$REPO_ROOT" ]; then
+            echo "Error: Not in a git repository"
+            exit 1
+        fi
+        REPO_NAME=$(basename "$REPO_ROOT")
+
+        # Construct worktree directory name
+        WORKTREE_DIR="$TARGET_DIR/$REPO_NAME-$NAME"
+
+        # Branch name is the same as the input name
+        BRANCH_NAME="$NAME"
+
+        # Check if branch already exists
+        if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+            echo "Branch '$BRANCH_NAME' already exists, using existing branch..."
+            git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
+        else
+            echo "Creating new branch '$BRANCH_NAME' from '$BASE_BRANCH'..."
+            git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" "$BASE_BRANCH"
+        fi
+
+        echo ""
+        echo "Worktree created at: $WORKTREE_DIR"
+        echo "Branch: $BRANCH_NAME"
+        echo ""
+        echo "Run: cd $WORKTREE_DIR"
+        ;;
+
+    rm)
+        FORCE=""
+        if [ "$1" = "-f" ]; then
+            FORCE="--force"
+            shift
+        fi
+
+        if [ -z "$1" ]; then
+            echo "Error: Target directory required for rm"
+            echo "Usage: gw rm [-f] <target-dir>"
+            exit 1
+        fi
+
+        TARGET_DIR="$1"
+
+        echo "Removing worktree at: $TARGET_DIR"
+        git worktree remove $FORCE "$TARGET_DIR"
+        echo "Worktree removed."
+        ;;
+
+    mv)
+        if [ -z "$1" ] || [ -z "$2" ]; then
+            echo "Error: Both old and new directories required"
+            echo "Usage: gw mv <old-dir> <new-dir>"
+            exit 1
+        fi
+
+        OLD_DIR="$1"
+        NEW_DIR="$2"
+
+        echo "Moving worktree from: $OLD_DIR to: $NEW_DIR"
+        git worktree move "$OLD_DIR" "$NEW_DIR"
+        echo "Worktree moved."
+        ;;
+
+    co)
+        if [ -z "$1" ] || [ -z "$2" ]; then
+            echo "Error: Branch and target directory required"
+            echo "Usage: gw co <branch> <target-dir>"
+            exit 1
+        fi
+
+        BRANCH="$1"
+        TARGET_DIR="$2"
+
+        # Get current repo name from git root
+        REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+        if [ -z "$REPO_ROOT" ]; then
+            echo "Error: Not in a git repository"
+            exit 1
+        fi
+        REPO_NAME=$(basename "$REPO_ROOT")
+
+        # Construct worktree directory name
+        WORKTREE_DIR="$TARGET_DIR/$REPO_NAME-$BRANCH"
+
+        echo "Checking out branch '$BRANCH' to worktree..."
+        git worktree add "$WORKTREE_DIR" "$BRANCH"
+
+        echo ""
+        echo "Worktree created at: $WORKTREE_DIR"
+        echo "Branch: $BRANCH"
+        echo ""
+        echo "Run: cd $WORKTREE_DIR"
+        ;;
+
+    rmall)
+        FORCE=""
+        PATTERN=""
+        USE_TMUX_SESSION=false
+
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                -f)
+                    FORCE="--force"
+                    shift
+                    ;;
+                -s)
+                    USE_TMUX_SESSION=true
+                    shift
+                    ;;
+                *)
+                    PATTERN="$1"
+                    shift
+                    ;;
+            esac
+        done
+
+        # Handle -s flag
+        if [ "$USE_TMUX_SESSION" = true ]; then
+            if [ -n "$PATTERN" ]; then
+                echo "Error: -s and pattern are mutually exclusive"
+                exit 1
+            fi
+            if [ -z "$TMUX" ]; then
+                echo "Error: -s requires running inside tmux"
+                exit 1
+            fi
+            PATTERN=$(tmux display-message -p '#S' | tr ' ' '-')
+        fi
+
+        if [ -z "$PATTERN" ]; then
+            echo "Error: Pattern required (-s or provide pattern)"
+            echo "Usage: gw rmall [-f] [-s | <pattern>]"
+            exit 1
+        fi
+
+        # Find directories matching the pattern in current directory
+        MATCHES=$(ls -d */ 2>/dev/null | grep "$PATTERN" || true)
+
+        if [ -z "$MATCHES" ]; then
+            echo "No directories matching '$PATTERN' found"
+            exit 0
+        fi
+
+        echo "Found directories matching '$PATTERN':"
+        echo "$MATCHES"
+        echo ""
+
+        for DIR in $MATCHES; do
+            # Remove trailing slash
+            DIR="${DIR%/}"
+            FULL_PATH="$(pwd)/$DIR"
+            echo "Removing worktree: $DIR"
+
+            # Extract repo name (first part before the first dash followed by pattern)
+            REPO_NAME=$(echo "$DIR" | sed 's/-[A-Z]*-[0-9].*$//')
+            MAIN_REPO=""
+
+            # Look for main repo in common locations
+            if [ -d "$(pwd)/$REPO_NAME/.git" ]; then
+                MAIN_REPO="$(pwd)/$REPO_NAME"
+            elif [ -d "$HOME/Documents/$REPO_NAME/.git" ]; then
+                MAIN_REPO="$HOME/Documents/$REPO_NAME"
+            fi
+
+            # Try normal git worktree remove from main repo first
+            if [ -n "$MAIN_REPO" ] && git -C "$MAIN_REPO" worktree remove $FORCE "$FULL_PATH" 2>/dev/null; then
+                echo "  Removed via git worktree"
+            elif [ -n "$FORCE" ]; then
+                # Force flag set - force remove
+                echo "  Git worktree remove failed, force removing directory..."
+                rm -rf "$FULL_PATH"
+
+                if [ -n "$MAIN_REPO" ]; then
+                    echo "  Pruning worktree references in $MAIN_REPO..."
+                    git -C "$MAIN_REPO" worktree prune 2>/dev/null || true
+                fi
+                echo "  Force removed $DIR"
+            else
+                echo "  Failed to remove $DIR (use -f to force remove broken worktrees)"
+            fi
+        done
+
+        echo ""
+        echo "Done."
+        ;;
+
+    *)
+        echo "Error: Unknown command '$COMMAND'"
+        usage
+        ;;
+esac
