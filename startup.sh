@@ -24,5 +24,8 @@ brew install node
 # brew install ruby
 stow nvim
 
+# custom scripts - add to PATH
+echo 'export PATH="$HOME/billwang/scripts:$PATH"' >> ~/.zshrc
+
 
 
