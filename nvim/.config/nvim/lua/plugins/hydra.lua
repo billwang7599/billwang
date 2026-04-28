@@ -22,7 +22,7 @@ return {
         { "d", "<cmd>vsplit<cr>", { desc = "vsplit" } },
         { "D", "<cmd>split<cr>", { desc = "hsplit" } },
 
-        { "t", "<cmd>terminal<cr>i", { exit = true, desc = "terminal" } },
+        { "t", "<cmd>ToggleTerm<cr>", { exit = true, desc = "float terminal" } },
         { "=", "<C-w>=", { desc = "equalize" } },
         { "q", "<cmd>close<cr>", { desc = "close" } },
 
