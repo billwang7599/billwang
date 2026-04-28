@@ -34,7 +34,6 @@ return {
         hint = {
           type = "window",
           position = "bottom-right",
-          border = "rounded",
         },
       },
     })
@@ -57,7 +56,6 @@ return {
         hint = {
           type = "window",
           position = "bottom-right",
-          border = "rounded",
         },
       },
     })
@@ -77,7 +75,6 @@ return {
         hint = {
           type = "window",
           position = "bottom-right",
-          border = "rounded",
         },
       },
     })
@@ -104,7 +101,6 @@ return {
         hint = {
           type = "window",
           position = "bottom-right",
-          border = "rounded",
         },
       },
     })
