@@ -77,7 +77,13 @@ return {
     vim.api.nvim_create_autocmd("LspAttach", {
       group = vim.api.nvim_create_augroup("UserLspConfig", {}),
       callback = function(ev)
-        local bufopts = { noremap = true, silent = true, buffer = ev.buf }
+        local buf = ev.buf
+        local name = vim.api.nvim_buf_get_name(buf)
+        if name:match("^fugitive://") then
+          vim.lsp.buf_detach_client(buf, ev.data.client_id)
+          return
+        end
+        local bufopts = { noremap = true, silent = true, buffer = buf }
         vim.keymap.set("n", "gd", vim.lsp.buf.definition, bufopts)
         vim.keymap.set("n", "K", vim.lsp.buf.hover, bufopts)
       end,

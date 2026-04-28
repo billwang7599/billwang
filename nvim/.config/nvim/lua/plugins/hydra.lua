@@ -1,6 +1,6 @@
 return {
   "nvimtools/hydra.nvim",
-  keys = { "<leader>w", "<leader>f", "<leader>r", "<leader>e" },
+  keys = { "<leader>w", "<leader>f", "<leader>r", "<leader>e", "<leader>g" },
   config = function()
     local Hydra = require("hydra")
 
@@ -93,6 +93,39 @@ return {
         { "f", function() vim.lsp.buf.format({ async = true }) end, { exit = true, desc = "format" } },
         { "[", vim.diagnostic.goto_prev, { desc = "prev diagnostic" } },
         { "]", vim.diagnostic.goto_next, { desc = "next diagnostic" } },
+
+        { "<Esc>", nil, { exit = true, desc = false } },
+      },
+      config = {
+        invoke_on_body = true,
+        hint = {
+          type = "window",
+          position = "bottom-right",
+        },
+      },
+    })
+    Hydra({
+      name = "Git",
+      mode = "n",
+      body = "<leader>g",
+      heads = {
+        { "s", "<cmd>Git<cr>", { exit = true, desc = "status" } },
+        { "b", "<cmd>Git blame<cr>", { exit = true, desc = "blame" } },
+        { "l", "<cmd>Git log --oneline<cr>", { exit = true, desc = "log" } },
+        { "L", "<cmd>Git log --oneline %<cr>", { exit = true, desc = "file log" } },
+        { "d", "<cmd>Gvdiffsplit<cr>", { exit = true, desc = "diff file" } },
+        { "D", "<cmd>DiffviewOpen<cr>", { exit = true, desc = "diff all" } },
+        { "h", "<cmd>DiffviewFileHistory %<cr>", { exit = true, desc = "file history" } },
+        { "H", "<cmd>DiffviewFileHistory<cr>", { exit = true, desc = "branch history" } },
+        { "p", function() require("gitsigns").preview_hunk() end, { exit = true, desc = "preview hunk" } },
+        { "a", function() require("gitsigns").stage_hunk() end, { desc = "stage hunk" } },
+        { "u", function() require("gitsigns").undo_stage_hunk() end, { desc = "undo stage" } },
+        { "x", function() require("gitsigns").reset_hunk() end, { desc = "reset hunk" } },
+        { "B", function() require("gitsigns").toggle_current_line_blame() end, { exit = true, desc = "toggle blame" } },
+        { "]", function() require("gitsigns").next_hunk() end, { desc = "next hunk" } },
+        { "[", function() require("gitsigns").prev_hunk() end, { desc = "prev hunk" } },
+        { "c", "<cmd>DiffviewOpen HEAD~1<cr>", { exit = true, desc = "last commit" } },
+        { "q", "<cmd>DiffviewClose<cr>", { exit = true, desc = "close diffview" } },
 
         { "<Esc>", nil, { exit = true, desc = false } },
       },
