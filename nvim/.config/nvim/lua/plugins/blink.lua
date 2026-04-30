@@ -1,9 +1,7 @@
 return {
   "Saghen/blink.cmp",
-  -- This ensures the fuzzy engine is compiled on every update
-  -- build = "cargo build --release", 
-  -- If you don't have cargo installed, use the pre-built binaries instead:
-  -- build = 'nix run .#build-plugin', 
+  version = "*",
+  build = "cargo build --release",
   
   opts = {
     -- your blink.cmp options here
