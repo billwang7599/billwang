@@ -1,11 +1,18 @@
 #!/bin/bash
 
 # good packages (MACOS)
-# install brew here
+# Check if Homebrew is installed
+if ! command -v brew &>/dev/null; then
+    echo "Error: Homebrew is not installed." >&2
+    echo "Please install it first by running:" >&2
+    echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' >&2
+    exit 1
+fi
 
 command -v stow &>/dev/null || brew install stow
 command -v git &>/dev/null || brew install git
 command -v lazygit &>/dev/null || brew install lazygit
+command -v cargo &>/dev/null || brew install rust
 
 # tmux
 command -v tmux &>/dev/null || brew install tmux
