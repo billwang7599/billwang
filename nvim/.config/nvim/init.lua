@@ -58,7 +58,7 @@ end, { noremap = true, silent = true, desc = "Copy full file path" })
 
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear search highlight" })
 
-vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+vim.keymap.set("t", "<C-q>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 
 vim.diagnostic.config({
   virtual_text = true,

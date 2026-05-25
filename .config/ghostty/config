@@ -1,0 +1,19 @@
+# Glassy appearance
+background = 1a1a1a
+background-opacity = 0.75
+background-blur-radius = 20
+
+# macOS-specific: transparent titlebar for full glass effect
+macos-titlebar-style = transparent
+macos-window-shadow = true
+
+# Padding so text doesn't hug the edges
+window-padding-x = 12
+window-padding-y = 12
+window-padding-balance = true
+
+# Optional: remove window chrome for a floating glass panel look
+# window-decoration = none
+
+# Optional: slightly rounded corners (macOS)
+window-step-resize = false
