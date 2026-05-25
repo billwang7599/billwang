@@ -28,14 +28,7 @@ return {
       },
     })
 
-    -- Global keymaps
-    vim.keymap.set("n", "<leader>bx", bm.bookmark_toggle, { desc = "Bookmark toggle" })
-    vim.keymap.set("n", "<leader>ba", bm.bookmark_ann, { desc = "Bookmark annotate" })
-    vim.keymap.set("n", "<leader>bn", bm.bookmark_next, { desc = "Bookmark next" })
-    vim.keymap.set("n", "<leader>bp", bm.bookmark_prev, { desc = "Bookmark prev" })
-    vim.keymap.set("n", "<leader>bm", "<cmd>Telescope bookmarks list<cr>", { desc = "Bookmark list" })
-    vim.keymap.set("n", "<leader>bc", bm.bookmark_clean, { desc = "Bookmark clean (buffer)" })
-    vim.keymap.set("n", "<leader>bC", bm.bookmark_clear_all, { desc = "Bookmark clear all" })
+    -- Bookmark keymaps live in the Bookmarks Hydra (<leader>b) in hydra.lua
 
     -- Load telescope extension
     require("telescope").load_extension("bookmarks")

@@ -1,0 +1,139 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-opus-4-8",
+  "instructions": ["/Users/bwang/.config/opencode/AGENTS.md"],
+  "permission": {
+    "read": "allow",
+    "edit": "allow",
+    "webfetch": "allow",
+    // external_directory rules are last-wins; broad rules first, narrow last.
+    "external_directory": {
+      "~/Documents/**": "allow"
+    },
+    // bash rules are evaluated last-wins, so the catch-all goes first and
+    // narrow allows go after. patterns are shell glob, so `ls *` also matches
+    // anything piped/chained after `ls `. don't add patterns you wouldn't
+    // want chained to `rm -rf`.
+    "bash": {
+      "*": "ask",
+
+      // shell builtins / trivial introspection
+      "pwd": "allow",
+      "whoami": "allow",
+      "id": "allow",
+      "hostname": "allow",
+      "uname *": "allow",
+      "date": "allow",
+      "date *": "allow",
+      "env": "allow",
+      "echo *": "allow",
+      "printf *": "allow",
+      "which *": "allow",
+      "command -v *": "allow",
+      "type *": "allow",
+      "true": "allow",
+      "false": "allow",
+
+      // directory listing
+      "ls": "allow",
+      "ls *": "allow",
+      "tree": "allow",
+      "tree *": "allow",
+
+      // file inspection (read-only)
+      "cat *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "wc *": "allow",
+      "file *": "allow",
+      "stat *": "allow",
+      "readlink *": "allow",
+      "realpath *": "allow",
+      "xxd *": "allow",
+      "hexdump *": "allow",
+      "od *": "allow",
+
+      // search
+      "find *": "allow",
+      "grep": "allow",
+      "grep *": "allow",
+      "rg": "allow",
+      "rg *": "allow",
+      "fd *": "allow",
+      "ag *": "allow",
+
+      // read-in / write-stdout text processing
+      "sort *": "allow",
+      "uniq *": "allow",
+      "cut *": "allow",
+      "tr *": "allow",
+      "column *": "allow",
+      "awk *": "allow",
+      "jq *": "allow",
+      "yq *": "allow",
+      "diff *": "allow",
+
+      // git read-only
+      "git status": "allow",
+      "git status *": "allow",
+      "git diff": "allow",
+      "git diff *": "allow",
+      "git log": "allow",
+      "git log *": "allow",
+      "git show": "allow",
+      "git show *": "allow",
+      "git blame *": "allow",
+      "git ls-files": "allow",
+      "git ls-files *": "allow",
+      "git ls-tree *": "allow",
+      "git check-ignore *": "allow",
+      "git rev-parse *": "allow",
+      "git describe *": "allow",
+      "git branch": "allow",
+      "git branch -v": "allow",
+      "git branch -a": "allow",
+      "git branch -r": "allow",
+      "git branch --list *": "allow",
+      "git remote": "allow",
+      "git remote -v": "allow",
+      "git remote show *": "allow",
+      "git config --get *": "allow",
+      "git config --list": "allow",
+      "git reflog": "allow",
+      "git reflog *": "allow",
+      "git stash list": "allow",
+      "git stash show *": "allow",
+      "git tag": "allow",
+      "git tag -l": "allow",
+      "git tag -l *": "allow",
+      "git tag --list *": "allow",
+      "git shortlog": "allow",
+      "git shortlog *": "allow",
+      "git grep *": "allow",
+
+      // gh CLI read-only (the common subset)
+      "gh auth status": "allow",
+      "gh status": "allow",
+      "gh repo view": "allow",
+      "gh repo view *": "allow",
+      "gh repo list": "allow",
+      "gh repo list *": "allow",
+      "gh pr list": "allow",
+      "gh pr list *": "allow",
+      "gh pr view *": "allow",
+      "gh pr diff *": "allow",
+      "gh pr status": "allow",
+      "gh pr checks *": "allow",
+      "gh issue list": "allow",
+      "gh issue list *": "allow",
+      "gh issue view *": "allow",
+      "gh issue status": "allow",
+      "gh release list": "allow",
+      "gh release list *": "allow",
+      "gh release view *": "allow",
+      "gh run list": "allow",
+      "gh run list *": "allow",
+      "gh run view *": "allow"
+    }
+  }
+}

@@ -1,8 +1,140 @@
 return {
   "nvimtools/hydra.nvim",
-  keys = { "<leader>w", "<leader>f", "<leader>r", "<leader>e", "<leader>g" },
+  keys = { "<leader>w", "<Tab>", "<leader><Tab>", "<leader>f", "<leader>r", "<leader>e", "<leader>g", "<leader>b" },
   config = function()
     local Hydra = require("hydra")
+    local git_history_group = vim.api.nvim_create_augroup("GitHistoryWorktreeCleanup", { clear = true })
+
+    local lazygit_term
+    local function open_lazygit()
+      require("lazy").load({ plugins = { "toggleterm.nvim" } })
+
+      local Terminal = require("toggleterm.terminal").Terminal
+      if not lazygit_term then
+        lazygit_term = Terminal:new({ cmd = "lazygit", hidden = true, direction = "float" })
+      end
+
+      lazygit_term:toggle()
+    end
+
+    local function cleanup_history_worktree(root, path)
+      if not root or not path or vim.fn.isdirectory(path) == 0 then
+        return
+      end
+
+      vim.fn.jobstart({ "git", "-C", root, "worktree", "remove", "--force", path }, { detach = true })
+    end
+
+    vim.api.nvim_create_autocmd("TabClosedPre", {
+      group = git_history_group,
+      callback = function()
+        cleanup_history_worktree(vim.t.git_history_root, vim.t.git_history_worktree)
+      end,
+    })
+
+    vim.api.nvim_create_autocmd("VimLeavePre", {
+      group = git_history_group,
+      callback = function()
+        for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+          local has_root, root = pcall(vim.api.nvim_tabpage_get_var, tab, "git_history_root")
+          local has_path, path = pcall(vim.api.nvim_tabpage_get_var, tab, "git_history_worktree")
+
+          if has_root and has_path then
+            cleanup_history_worktree(root, path)
+          end
+        end
+      end,
+    })
+
+    local function get_git_root()
+      local root = vim.fn.systemlist({ "git", "rev-parse", "--show-toplevel" })[1]
+      if vim.v.shell_error ~= 0 or not root or root == "" then
+        vim.notify("Not inside a git repository", vim.log.levels.ERROR)
+        return nil
+      end
+
+      return root
+    end
+
+    local function open_history_worktree(root, commit, display)
+      local base = vim.fn.stdpath("cache") .. "/git-history-worktrees"
+      local repo = vim.fn.fnamemodify(root, ":t")
+      local short = commit:sub(1, 7)
+      local path = string.format("%s/%s-%s-%d", base, repo, short, os.time())
+
+      vim.fn.mkdir(base, "p")
+
+      local output = vim.fn.system({ "git", "-C", root, "worktree", "add", "--detach", path, commit })
+      if vim.v.shell_error ~= 0 then
+        vim.notify(vim.trim(output), vim.log.levels.ERROR)
+        return
+      end
+
+      vim.cmd("tabnew")
+      vim.cmd("tcd " .. vim.fn.fnameescape(path))
+      vim.cmd("edit " .. vim.fn.fnameescape(path))
+
+      vim.t.git_history_root = root
+      vim.t.git_history_worktree = path
+      vim.t.git_history_commit = commit
+
+      vim.notify("Viewing " .. (display or short) .. ". Closing this tab removes the temp worktree.", vim.log.levels.INFO)
+    end
+
+    local function open_git_history()
+      require("lazy").load({ plugins = { "telescope.nvim" } })
+
+      local root = get_git_root()
+      if not root then
+        return
+      end
+
+      local lines = vim.fn.systemlist({ "git", "-C", root, "log", "--date=short", "--pretty=format:%H%x1f%h%x1f%ad%x1f%s" })
+      if vim.v.shell_error ~= 0 then
+        vim.notify(table.concat(lines, "\n"), vim.log.levels.ERROR)
+        return
+      end
+
+      local pickers = require("telescope.pickers")
+      local finders = require("telescope.finders")
+      local actions = require("telescope.actions")
+      local action_state = require("telescope.actions.state")
+      local conf = require("telescope.config").values
+
+      pickers.new({}, {
+        prompt_title = "Git History",
+        finder = finders.new_table({
+          results = lines,
+          entry_maker = function(line)
+            local parts = vim.split(line, "\31", { plain = true })
+            local commit = parts[1]
+            local short = parts[2] or commit:sub(1, 7)
+            local date = parts[3] or ""
+            local subject = parts[4] or ""
+            local display = string.format("%s  %s  %s", short, date, subject)
+
+            return {
+              value = commit,
+              display = display,
+              ordinal = display .. " " .. commit,
+            }
+          end,
+        }),
+        sorter = conf.generic_sorter({}),
+        attach_mappings = function(prompt_bufnr)
+          actions.select_default:replace(function()
+            local selection = action_state.get_selected_entry()
+            actions.close(prompt_bufnr)
+
+            if selection then
+              open_history_worktree(root, selection.value, selection.display)
+            end
+          end)
+
+          return true
+        end,
+      }):find()
+    end
 
     Hydra({
       name = "Windows",
@@ -22,7 +154,6 @@ return {
         { "d", "<cmd>vsplit<cr>", { desc = "vsplit" } },
         { "D", "<cmd>split<cr>", { desc = "hsplit" } },
 
-        { "t", "<cmd>ToggleTerm<cr>", { exit = true, desc = "float terminal" } },
         { "=", "<C-w>=", { desc = "equalize" } },
         { "q", "<cmd>close<cr>", { desc = "close" } },
 
@@ -37,6 +168,31 @@ return {
         },
       },
     })
+    local tabs_hydra = Hydra({
+      name = "Tabs",
+      mode = "n",
+      body = "<Tab>",
+      heads = {
+        { "h", "<cmd>tabprevious<cr>", { desc = "prev" } },
+        { "l", "<cmd>tabnext<cr>", { desc = "next" } },
+        { "H", "<cmd>tabmove -<cr>", { desc = "move left" } },
+        { "L", "<cmd>tabmove +<cr>", { desc = "move right" } },
+        { "n", "<cmd>tabnew<cr><cmd>Telescope find_files<cr>", { exit = true, desc = "new" } },
+        { "q", "<cmd>tabclose<cr>", { exit = true, desc = "close" } },
+
+        { "<Esc>", nil, { exit = true, desc = false } },
+      },
+      config = {
+        invoke_on_body = true,
+        hint = {
+          type = "window",
+          position = "bottom-right",
+        },
+      },
+    })
+    vim.keymap.set("n", "<leader><Tab>", function()
+      tabs_hydra:activate()
+    end, { desc = "Tabs hydra" })
     Hydra({
       name = "Find",
       mode = "n",
@@ -111,21 +267,32 @@ return {
       heads = {
         { "s", "<cmd>Git<cr>", { exit = true, desc = "status" } },
         { "b", "<cmd>Git blame<cr>", { exit = true, desc = "blame" } },
-        { "l", "<cmd>Git log --oneline<cr>", { exit = true, desc = "log" } },
-        { "L", "<cmd>Git log --oneline %<cr>", { exit = true, desc = "file log" } },
-        { "d", "<cmd>Gvdiffsplit<cr>", { exit = true, desc = "diff file" } },
-        { "D", "<cmd>DiffviewOpen<cr>", { exit = true, desc = "diff all" } },
-        { "h", "<cmd>DiffviewFileHistory %<cr>", { exit = true, desc = "file history" } },
-        { "H", "<cmd>DiffviewFileHistory<cr>", { exit = true, desc = "branch history" } },
-        { "p", function() require("gitsigns").preview_hunk() end, { exit = true, desc = "preview hunk" } },
-        { "a", function() require("gitsigns").stage_hunk() end, { desc = "stage hunk" } },
-        { "u", function() require("gitsigns").undo_stage_hunk() end, { desc = "undo stage" } },
-        { "x", function() require("gitsigns").reset_hunk() end, { desc = "reset hunk" } },
-        { "B", function() require("gitsigns").toggle_current_line_blame() end, { exit = true, desc = "toggle blame" } },
-        { "]", function() require("gitsigns").next_hunk() end, { desc = "next hunk" } },
-        { "[", function() require("gitsigns").prev_hunk() end, { desc = "prev hunk" } },
-        { "c", "<cmd>DiffviewOpen HEAD~1<cr>", { exit = true, desc = "last commit" } },
-        { "q", "<cmd>DiffviewClose<cr>", { exit = true, desc = "close diffview" } },
+        { "l", open_lazygit, { exit = true, desc = "lazygit" } },
+        { "d", "<cmd>DiffviewOpen HEAD~1..HEAD<cr>", { exit = true, desc = "diff" } },
+        { "h", open_git_history, { exit = true, desc = "history" } },
+
+        { "<Esc>", nil, { exit = true, desc = false } },
+      },
+      config = {
+        invoke_on_body = true,
+        hint = {
+          type = "window",
+          position = "bottom-right",
+        },
+      },
+    })
+    Hydra({
+      name = "Bookmarks",
+      mode = "n",
+      body = "<leader>b",
+      heads = {
+        { "x", function() require("bookmarks").bookmark_toggle() end, { desc = "toggle" } },
+        { "a", function() require("bookmarks").bookmark_ann() end, { exit = true, desc = "annotate" } },
+        { "n", function() require("bookmarks").bookmark_next() end, { desc = "next" } },
+        { "p", function() require("bookmarks").bookmark_prev() end, { desc = "prev" } },
+        { "m", "<cmd>Telescope bookmarks list<cr>", { exit = true, desc = "list" } },
+        { "c", function() require("bookmarks").bookmark_clean() end, { exit = true, desc = "clean buffer" } },
+        { "C", function() require("bookmarks").bookmark_clear_all() end, { exit = true, desc = "clear all" } },
 
         { "<Esc>", nil, { exit = true, desc = false } },
       },
