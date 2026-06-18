@@ -36,7 +36,6 @@ command -v node &>/dev/null || brew install node
 # command -v ruby &>/dev/null || brew install ruby
 stow nvim
 stow ghostty
-stow cmux
 
 # opencode
 command -v opencode &>/dev/null || brew install sst/tap/opencode
@@ -44,8 +43,3 @@ stow opencode
 
 # custom scripts - add to PATH
 grep -q 'billwang/scripts' ~/.zshrc || echo 'export PATH="$HOME/billwang/scripts:$PATH"' >> ~/.zshrc
-
-# claude code
-stow claude
-(cd ~/.claude/agents/security-review && npm install)
-(cd ~/.claude/agents/code-review && npm install)
