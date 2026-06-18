@@ -11,6 +11,8 @@ return {
         topdelete = { text = "‾" },
         changedelete = { text = "~" },
       },
+      numhl = true, -- color the line NUMBER for changed lines, not the whole line
+      linehl = false,
       
     })
   end,
