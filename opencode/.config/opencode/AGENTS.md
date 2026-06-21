@@ -33,3 +33,52 @@ Example flow:
     ~/Documents/cli/confluence/confluence --help
     ~/Documents/cli/confluence/confluence get --help
     ~/Documents/cli/confluence/confluence get /rest/api/content/12345 --pretty
+
+# GitLab (`glab`)
+
+GitLab is the exception to the "check `~/Documents/cli/`" rule: it has a
+real dedicated CLI, `glab`, already installed and authenticated as the
+user to the internal instance `gitlab.cfdata.org`. Use it for merge
+requests, issues, pipelines, etc. — don't scrape HTML or `webfetch`
+internal GitLab URLs (they're auth-gated and return nothing useful).
+
+Gotchas, learned the hard way:
+
+1. **`glab` defaults to `gitlab.com`, not the internal host.** Set
+   `GITLAB_HOST=gitlab.cfdata.org` on every invocation. Without it,
+   `glab mr view` and friends 404 or report "Unauthenticated".
+2. **Prefer raw REST mode (`glab api`) over the friendly subcommands**
+   for anything scripted — it's predictable and host-respecting.
+   `glab mr view --repo ...` was the thing that 404'd.
+3. **URL-encode `/` in project paths as `%2F`** when using `glab api`.
+4. Resolve a project to its numeric ID once, then reuse it.
+
+Example flow (review a merge request):
+
+    GITLAB_HOST=gitlab.cfdata.org glab auth status
+    # resolve group/sub/repo path -> project id
+    GITLAB_HOST=gitlab.cfdata.org glab api "projects/cloudflare%2Fea%2Fheimtor"
+    # then, using that id:
+    GITLAB_HOST=gitlab.cfdata.org glab api "projects/2686/merge_requests/2414"
+    GITLAB_HOST=gitlab.cfdata.org glab api "projects/2686/merge_requests/2414/changes"  # the diff
+    GITLAB_HOST=gitlab.cfdata.org glab api "projects/2686/merge_requests/2414/notes"    # comments
+
+If the repo is also cloned locally, read the clone for surrounding code
+context instead of reconstructing it from the diff alone.
+
+# Explanations and breakdowns
+
+Always open the reply with "ok bill wang ..." (then carry on).
+
+When you explain something or break it down, use simple words and short
+sentences. Don't reach for jargon, long clauses, or fancy phrasing. If a
+technical term is the real thing the user needs to learn, use it and
+define it plainly the first time.
+
+Prefer explanations as dot jots (bullet points), not paragraphs. Keep
+outputs simple and non-verbose — fewer words, less filler.
+
+Sprinkle in the odd emoji for humor 😄🔥 — don't overdo it.
+
+A breakdown the user can't follow is worse than no breakdown. Optimize
+for "they understood it," not "it sounded thorough."
